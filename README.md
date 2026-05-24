@@ -2,6 +2,8 @@
 
 Автоматизированный SaaS для генерации и публикации контента в социальные сети. Собирает материал из RSS-лент, генерирует посты с помощью AI и публикует их по расписанию — без ручного участия.
 
+**🌐 Живое демо: [http://93.189.230.249](http://93.189.230.249)**
+
 ---
 
 ## Что умеет
@@ -11,7 +13,6 @@
 - **Изображения** — Pollinations (бесплатно без ключа), FAL.ai
 - **Публикация** — Telegram-каналы и ВКонтакте группы, несколько аккаунтов одновременно
 - **Расписание** — настраиваемый интервал публикации для каждой темы отдельно
-- **Облачное хранилище** — интеграция с Google Drive для архивации постов
 - **Безопасность** — все токены хранятся в зашифрованном виде (AES-256-GCM)
 
 ---
@@ -21,10 +22,10 @@
 | Слой | Технологии |
 |------|-----------|
 | Фронтенд | React 18, TypeScript, Vite, Tailwind CSS |
-| Бэкенд | Node.js 24, Express 4, Prisma 5, SQLite |
-| Воркер | BullMQ, Upstash Redis |
-| AI | Groq / Gemini / Anthropic / OpenAI / Mistral / Ollama |
-| Деплой | Render (backend + worker), Netlify (frontend) |
+| Бэкенд | Node.js 20, Express 4, Prisma 5, SQLite |
+| Воркер | BullMQ, Redis |
+| AI | Groq / Gemini / Anthropic / OpenAI / Mistral |
+| Деплой | VPS (Ubuntu 24.04, nginx, PM2) |
 
 ---
 
@@ -48,10 +49,7 @@ cd ../frontend && npm install
 ### 2. Настроить переменные окружения
 
 ```bash
-# backend
 cp backend/.env.example backend/.env
-
-# worker
 cp worker/.env.example worker/.env
 ```
 
@@ -63,13 +61,12 @@ ENCRYPTION_KEY="your-32-char-encryption-key-here"
 REDIS_URL="redis://localhost:6379"
 ```
 
-В `worker/.env` те же переменные, кроме JWT_SECRET.
+В `worker/.env` те же переменные, кроме `JWT_SECRET`.
 
 ### 3. Инициализировать базу данных
 
 ```bash
-cd backend
-npx prisma migrate dev
+cd backend && npx prisma migrate dev
 ```
 
 ### 4. Запустить все три сервиса
@@ -89,38 +86,11 @@ cd frontend && npm run dev
 
 ---
 
-## Деплой
-
-Фронтенд задеплоен на **Netlify**, бэкенд + воркер на **Render** (оба бесплатных тира).
-
-> **Честно про ограничения бесплатного деплоя:**
-> - Render на free tier "засыпает" после 15 минут неактивности — первый запрос после паузы занимает ~30-50 секунд
-> - SQLite хранится в эфемерной файловой системе — данные сбрасываются при перезапуске сервиса
-> - Для продакшена нужна PostgreSQL (например [Neon](https://neon.tech) — бесплатно) и платный инстанс
->
-> **Хотите посмотреть проект в работе?** Проще всего запустить локально по инструкции выше — займёт 5 минут. Либо могу показать демо лично.
-
-### Самостоятельный деплой
-
-**Frontend (Netlify):**
-1. netlify.com → Import from GitHub → выбрать репо
-2. Base directory: `frontend`, Build command: `npm run build`, Publish directory: `frontend/dist`
-3. Добавить env variable: `VITE_API_URL` = URL бэкенда на Render
-
-**Backend + Worker (Render):**
-1. render.com → New Web Service → выбрать репо
-2. Root directory: `backend`
-3. Build command: `npm install && npx prisma generate && npm run build && cd ../worker && npm install && npx prisma generate && npm run build`
-4. Start command: `npx prisma migrate deploy && cd .. && node start-all.js`
-5. Добавить env variables: `DATABASE_URL`, `JWT_SECRET`, `ENCRYPTION_KEY`, `REDIS_URL` (из [Upstash](https://upstash.com)), `FRONTEND_URL`
-
----
-
 ## Архитектура
 
 ```
 frontend/ (React SPA)
-    ↓ HTTP (VITE_API_URL в prod, Vite proxy в dev)
+    ↓ HTTP API
 backend/ (Express API)
     ↓ BullMQ jobs → Redis
 worker/ (BullMQ consumer)
@@ -158,25 +128,25 @@ content-factory/
 
 ## Конфигурация провайдеров
 
-После регистрации перейти в **Settings → API Keys** и добавить ключи:
+После регистрации перейти в **API Keys** и добавить ключи:
 
 | Провайдер | Где получить | Бесплатно |
 |-----------|-------------|-----------|
-| Groq | [console.groq.com](https://console.groq.com) | ✅ да |
-| Gemini | [aistudio.google.com](https://aistudio.google.com) | ✅ да |
-| Pollinations | не нужен | ✅ да |
+| Groq | [console.groq.com](https://console.groq.com) | ✅ |
+| Gemini | [aistudio.google.com](https://aistudio.google.com) | ✅ |
+| Pollinations | не нужен | ✅ |
 | FAL.ai | [fal.ai/dashboard](https://fal.ai/dashboard) | частично |
 | Anthropic | [console.anthropic.com](https://console.anthropic.com) | платно |
 | OpenAI | [platform.openai.com](https://platform.openai.com) | платно |
 
-> Для работы без единого платного ключа: Groq (LLM) + Pollinations (изображения) — оба бесплатны.
+> Для работы без единого платного ключа: Groq (LLM) + Pollinations (изображения).
 
 ---
 
 ## Особенности реализации
 
-- **Картинки как data URL** — изображения скачиваются в воркере сразу при генерации и хранятся в базе в виде base64. Это решает проблему истечения временных ссылок у image API до момента публикации.
-- **MIME-тип из заголовков** — тип изображения (PNG/JPEG) определяется из `Content-Type` ответа, а не захардкожен. Pollinations отдаёт PNG, FAL — JPEG, оба корректно передаются в Telegram и VK.
-- **Retry с backoff** — Telegram adapter делает до 3 попыток скачать картинку перед публикацией без фото.
-- **Шифрование ключей** — все API ключи шифруются AES-256-GCM перед записью в базу, расшифровываются только в runtime.
-- **Fallback модели Groq** — если основная модель (llama-3.3-70b) недоступна, автоматически переключается на резервные.
+- **Картинки как data URL** — изображения скачиваются при генерации и хранятся в БД в base64. Решает проблему истечения временных ссылок image API до момента публикации.
+- **MIME-тип из заголовков** — тип изображения определяется из `Content-Type` ответа, не захардкожен. Pollinations (PNG) и FAL (JPEG) оба корректно передаются в Telegram и VK.
+- **Retry с backoff** — Telegram adapter делает до 3 попыток при ошибке скачивания изображения.
+- **Шифрование ключей** — все API ключи шифруются AES-256-GCM перед записью в базу.
+- **Fallback модели** — если основная модель Groq недоступна, автоматически переключается на резервные.
