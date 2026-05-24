@@ -24,7 +24,7 @@
 | Бэкенд | Node.js 24, Express 4, Prisma 5, SQLite |
 | Воркер | BullMQ, Upstash Redis |
 | AI | Groq / Gemini / Anthropic / OpenAI / Mistral / Ollama |
-| Деплой | Railway (backend + worker), GitHub Pages (frontend) |
+| Деплой | Render (backend + worker), Netlify (frontend) |
 
 ---
 
@@ -37,7 +37,7 @@
 ### 1. Клонировать и установить зависимости
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/content-factory.git
+git clone https://github.com/alexandertrenbolone/content-factory.git
 cd content-factory
 
 cd backend && npm install
@@ -91,28 +91,28 @@ cd frontend && npm run dev
 
 ## Деплой
 
-Проект можно запустить бесплатно:
-- **Backend + Worker** → [Railway](https://railway.app) (бесплатный tier)
-- **Frontend** → GitHub Pages (автоматически через GitHub Actions)
+Фронтенд задеплоен на **Netlify**, бэкенд + воркер на **Render** (оба бесплатных тира).
 
-### Настройка Railway
-
-1. Создать новый проект на Railway
-2. Добавить два сервиса из монорепозитория:
-   - `backend/` — API сервер
-   - `worker/` — фоновый воркер
-3. Добавить Upstash Redis как плагин
-4. Задать переменные окружения для каждого сервиса (см. `.env.example`)
-
-### Настройка GitHub Pages
-
-1. В настройках репозитория включить GitHub Pages → Source: **GitHub Actions**
-2. Добавить секрет `VITE_API_URL` со значением URL вашего Railway бэкенда (например: `https://your-backend.railway.app`)
-3. При push в `main` фронтенд соберётся и задеплоится автоматически
-
-> **Важный момент про бесплатный деплой:** SQLite на Railway хранится в эфемерной файловой системе — при перезапуске сервиса база данных сбрасывается. Для продакшена нужна PostgreSQL, но для демонстрации и тестирования работает нормально. Если хотите сохранность данных бесплатно — Railway + PlanetScale (MySQL) или Neon (PostgreSQL) решают задачу.
+> **Честно про ограничения бесплатного деплоя:**
+> - Render на free tier "засыпает" после 15 минут неактивности — первый запрос после паузы занимает ~30-50 секунд
+> - SQLite хранится в эфемерной файловой системе — данные сбрасываются при перезапуске сервиса
+> - Для продакшена нужна PostgreSQL (например [Neon](https://neon.tech) — бесплатно) и платный инстанс
 >
-> Если вы видите этот проект и хотите пощупать его в деле — можно запустить локально за 5 минут по инструкции выше, либо посмотреть на работающую демо-версию: **[демо на GitHub Pages](https://YOUR_USERNAME.github.io/content-factory)**
+> **Хотите посмотреть проект в работе?** Проще всего запустить локально по инструкции выше — займёт 5 минут. Либо могу показать демо лично.
+
+### Самостоятельный деплой
+
+**Frontend (Netlify):**
+1. netlify.com → Import from GitHub → выбрать репо
+2. Base directory: `frontend`, Build command: `npm run build`, Publish directory: `frontend/dist`
+3. Добавить env variable: `VITE_API_URL` = URL бэкенда на Render
+
+**Backend + Worker (Render):**
+1. render.com → New Web Service → выбрать репо
+2. Root directory: `backend`
+3. Build command: `npm install && npx prisma generate && npm run build && cd ../worker && npm install && npx prisma generate && npm run build`
+4. Start command: `npx prisma migrate deploy && cd .. && node start-all.js`
+5. Добавить env variables: `DATABASE_URL`, `JWT_SECRET`, `ENCRYPTION_KEY`, `REDIS_URL` (из [Upstash](https://upstash.com)), `FRONTEND_URL`
 
 ---
 
