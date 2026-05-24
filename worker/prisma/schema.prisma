@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  companyId    String
+  company      Company  @relation(fields: [companyId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Company {
+  id                 String               @id @default(cuid())
+  name               String
+  users              User[]
+  llmKeys            LlmKey[]
+  imageKeys          ImageKey[]
+  storageConnections StorageConnection[]
+  socialAccounts     SocialAccount[]
+  sources            Source[]
+  topics             Topic[]
+  posts              Post[]
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+}
+
+model LlmKey {
+  id           String   @id @default(cuid())
+  companyId    String
+  company      Company  @relation(fields: [companyId], references: [id])
+  provider     String   // openai | anthropic | gemini | deepseek
+  encryptedKey String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  @@unique([companyId, provider])
+}
+
+model ImageKey {
+  id           String   @id @default(cuid())
+  companyId    String
+  company      Company  @relation(fields: [companyId], references: [id])
+  provider     String   // openai | fal | replicate
+  encryptedKey String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  @@unique([companyId, provider])
+}
+
+model Source {
+  id                  String    @id @default(cuid())
+  companyId           String
+  company             Company   @relation(fields: [companyId], references: [id])
+  topicId             String?
+  topic               Topic?    @relation(fields: [topicId], references: [id])
+  name                String
+  url                 String
+  isActive            Boolean   @default(true)
+  lastFetched         DateTime?
+  pollIntervalMinutes Int       @default(30)
+  createdAt           DateTime  @default(now())
+
+  @@unique([companyId, url])
+}
+
+model Topic {
+  id              String          @id @default(cuid())
+  companyId       String
+  company         Company         @relation(fields: [companyId], references: [id])
+  name            String
+  llmProvider     String
+  imageProvider   String?
+  systemPrompt    String
+  postFormat      String          @default("text")
+  scheduleMinutes Int             @default(60)
+  isActive        Boolean         @default(true)
+  autoPublish     Boolean         @default(true)
+  nextPublishAt   DateTime?
+  socialAccountId String
+  socialAccount   SocialAccount   @relation(fields: [socialAccountId], references: [id])
+  sources         Source[]
+  posts           Post[]
+  createdAt       DateTime        @default(now())
+}
+
+model Post {
+  id            String    @id @default(cuid())
+  companyId     String
+  company       Company   @relation(fields: [companyId], references: [id])
+  topicId       String
+  topic         Topic     @relation(fields: [topicId], references: [id])
+  sourceUrl     String
+  sourceTitle   String
+  generatedText String
+  imageUrl      String?
+  status        String    @default("pending")
+  publishedUrl  String?
+  publishedAt   DateTime?
+  error         String?
+  createdAt     DateTime  @default(now())
+}
+
+model SocialAccount {
+  id                String   @id @default(cuid())
+  companyId         String
+  company           Company  @relation(fields: [companyId], references: [id])
+  platform          String   // telegram | vk | pinterest | dzen
+  encryptedCreds    String   // JSON с токенами — зашифрован
+  label             String   // название канала/группы для отображения
+  isActive          Boolean  @default(true)
+  topics            Topic[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([companyId, platform, label])
+}
+
+model StorageConnection {
+  id                  String   @id @default(cuid())
+  companyId           String
+  company             Company  @relation(fields: [companyId], references: [id])
+  provider            String   // google | yandex
+  encryptedAccessToken  String
+  encryptedRefreshToken String?
+  expiresAt           DateTime?
+  folderName          String   @default("Content Factory")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([companyId, provider])
+}
