@@ -1,7 +1,8 @@
 import { Redis } from 'ioredis';
 import 'dotenv/config';
 
-export const redisConnection = new Redis(process.env.REDIS_URL!, {
+const redisUrl = process.env.REDIS_URL!;
+export const redisConnection = new Redis(redisUrl, {
   maxRetriesPerRequest: null,
-  tls: { rejectUnauthorized: false },
+  ...(redisUrl.startsWith('rediss://') ? { tls: { rejectUnauthorized: false } } : {}),
 });
