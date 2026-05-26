@@ -1,12 +1,12 @@
 import { google } from 'googleapis';
 import { Readable } from 'stream';
 
-const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
-const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
-const REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/storage/google/callback';
-
 export function createOAuthClient() {
-  return new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+  return new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID || '',
+    process.env.GOOGLE_CLIENT_SECRET || '',
+    process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/storage/google/callback',
+  );
 }
 
 export function getAuthUrl(state: string): string {

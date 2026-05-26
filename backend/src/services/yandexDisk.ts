@@ -1,14 +1,10 @@
 import axios from 'axios';
 
-const CLIENT_ID = process.env.YANDEX_CLIENT_ID || '';
-const CLIENT_SECRET = process.env.YANDEX_CLIENT_SECRET || '';
-const REDIRECT_URI = process.env.YANDEX_REDIRECT_URI || 'http://localhost:3000/storage/yandex/callback';
-
 export function getAuthUrl(state: string): string {
   const params = new URLSearchParams({
     response_type: 'code',
-    client_id: CLIENT_ID,
-    redirect_uri: REDIRECT_URI,
+    client_id: process.env.YANDEX_CLIENT_ID || '',
+    redirect_uri: process.env.YANDEX_REDIRECT_URI || 'http://localhost:3000/storage/yandex/callback',
     state,
   });
   return `https://oauth.yandex.ru/authorize?${params}`;
@@ -20,9 +16,9 @@ export async function exchangeCode(code: string) {
     new URLSearchParams({
       grant_type: 'authorization_code',
       code,
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
-      redirect_uri: REDIRECT_URI,
+      client_id: process.env.YANDEX_CLIENT_ID || '',
+      client_secret: process.env.YANDEX_CLIENT_SECRET || '',
+      redirect_uri: process.env.YANDEX_REDIRECT_URI || 'http://localhost:3000/storage/yandex/callback',
     }),
     { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
   );
