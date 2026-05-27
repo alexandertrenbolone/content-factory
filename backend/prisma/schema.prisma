@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -37,7 +37,7 @@ model LlmKey {
   id           String   @id @default(cuid())
   companyId    String
   company      Company  @relation(fields: [companyId], references: [id])
-  provider     String   // openai | anthropic | gemini | deepseek
+  provider     String
   encryptedKey String
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
@@ -49,7 +49,7 @@ model ImageKey {
   id           String   @id @default(cuid())
   companyId    String
   company      Company  @relation(fields: [companyId], references: [id])
-  provider     String   // openai | fal | replicate
+  provider     String
   encryptedKey String
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
@@ -114,9 +114,9 @@ model SocialAccount {
   id                String   @id @default(cuid())
   companyId         String
   company           Company  @relation(fields: [companyId], references: [id])
-  platform          String   // telegram | vk | pinterest | dzen
-  encryptedCreds    String   // JSON с токенами — зашифрован
-  label             String   // название канала/группы для отображения
+  platform          String
+  encryptedCreds    String
+  label             String
   isActive          Boolean  @default(true)
   topics            Topic[]
   createdAt         DateTime @default(now())
@@ -126,16 +126,16 @@ model SocialAccount {
 }
 
 model StorageConnection {
-  id                  String   @id @default(cuid())
-  companyId           String
-  company             Company  @relation(fields: [companyId], references: [id])
-  provider            String   // google | yandex
+  id                    String   @id @default(cuid())
+  companyId             String
+  company               Company  @relation(fields: [companyId], references: [id])
+  provider              String
   encryptedAccessToken  String
   encryptedRefreshToken String?
-  expiresAt           DateTime?
-  folderName          String   @default("Content Factory")
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  expiresAt             DateTime?
+  folderName            String   @default("Content Factory")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   @@unique([companyId, provider])
 }
