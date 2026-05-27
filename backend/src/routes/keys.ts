@@ -152,8 +152,8 @@ router.post('/image/test', requireAuth, async (req: AuthRequest, res: Response) 
         res.json({ ok: true, provider });
       } catch (dallErr: any) {
         const msg = dallErr.response?.data?.error?.message || dallErr.message;
-        // Ключ верный, но DALL-E недоступен на этом аккаунте
-        res.json({ ok: false, error: `Ключ верный, но DALL-E недоступен: ${msg}` });
+        // Ключ верный, но DALL-E недоступен — возвращаем 400 чтобы фронт показал ошибку
+        res.status(400).json({ ok: false, error: `Ключ верный, но DALL-E недоступен: ${msg}` });
       }
     } else if (provider === 'fal') {
       await axios.post(

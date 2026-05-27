@@ -146,7 +146,7 @@ router.post('/image/test', auth_1.requireAuth, async (req, res) => {
             }
             catch (dallErr) {
                 const msg = dallErr.response?.data?.error?.message || dallErr.message;
-                res.json({ ok: false, error: `Ключ верный, но DALL-E недоступен: ${msg}` });
+                res.status(400).json({ ok: false, error: `Ключ верный, но DALL-E недоступен: ${msg}` });
             }
         }
         else if (provider === 'fal') {
