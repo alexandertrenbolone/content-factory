@@ -30,6 +30,11 @@ router.post('/clear-queue', auth_1.requireAuth, async (req, res) => {
             status: { in: ['pending', 'failed'] },
         },
     });
+    // Сбросить nextPublishAt чтобы следующие посты не ставились в хвост старой очереди
+    await prisma.topic.updateMany({
+        where: { companyId: req.companyId },
+        data: { nextPublishAt: null },
+    });
     await publishQueue.drain();
     await publishQueue.clean(0, 1000, 'delayed');
     res.json({ ok: true, deleted: count });
