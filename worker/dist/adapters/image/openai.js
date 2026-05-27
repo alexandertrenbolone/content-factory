@@ -12,7 +12,7 @@ class OpenAIImageAdapter {
     }
     async generate(prompt) {
         const response = await this.client.images.generate({
-            model: 'dall-e-3',
+            model: 'dall-e-2',
             prompt,
             n: 1,
             size: '1024x1024',
