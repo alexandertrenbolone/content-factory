@@ -37,11 +37,13 @@ async function publishPost(data) {
         });
         if (storageConns.length > 0) {
             const topicName = post.topic.name;
-            const dateStr = publishedAt.toLocaleDateString('ru', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            const timeStr = publishedAt.toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' });
+            const MSK = { timeZone: 'Europe/Moscow' };
+            const dateStr = publishedAt.toLocaleDateString('ru', { day: '2-digit', month: '2-digit', year: 'numeric', ...MSK });
+            const timeStr = publishedAt.toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit', ...MSK });
+            const mskDate = publishedAt.toLocaleDateString('sv', MSK);
             const safeTitle = post.sourceTitle.replace(/[\\/:*?"<>|]/g, '').slice(0, 60);
-            const fileName = `${publishedAt.toISOString().slice(0, 10)} ${timeStr.replace(':', '-')} — ${safeTitle}.txt`;
-            const fileContent = Buffer.from(`Новость: ${post.sourceTitle}\nИсточник: ${post.sourceUrl}\nОпубликовано: ${dateStr} в ${timeStr}\nПлатформа: ${socialAccount.platform}\n\n---\n\n${post.generatedText}`, 'utf8');
+            const fileName = `${mskDate} ${timeStr.replace(':', '-')} — ${safeTitle}.txt`;
+            const fileContent = Buffer.from(`Новость: ${post.sourceTitle}\nИсточник: ${post.sourceUrl}\nОпубликовано: ${dateStr} в ${timeStr} МСК\nПлатформа: ${socialAccount.platform}\n\n---\n\n${post.generatedText}`, 'utf8');
             for (const conn of storageConns) {
                 try {
                     const platform = socialAccount.platform;
