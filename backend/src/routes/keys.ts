@@ -1,5 +1,6 @@
 import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import axios from 'axios';
 import { requireAuth, AuthRequest } from '../lib/auth';
 import { encrypt, decrypt } from '../lib/crypto';
 import { createLlmAdapter } from '../adapters/llm';
@@ -121,6 +122,61 @@ router.post('/image', requireAuth, async (req: AuthRequest, res: Response) => {
     create: { companyId: req.companyId!, provider, encryptedKey },
   });
   res.json({ ok: true, provider });
+});
+
+// POST /keys/image/test — реально проверить Image ключ
+router.post('/image/test', requireAuth, async (req: AuthRequest, res: Response) => {
+  const { provider } = req.body;
+  const err = validateEnum(provider, 'provider', IMAGE_PROVIDERS);
+  if (err) { res.status(400).json({ error: err }); return; }
+
+  const record = await prisma.imageKey.findUnique({
+    where: { companyId_provider: { companyId: req.companyId!, provider } },
+  });
+  if (!record) { res.status(404).json({ error: 'Ключ не найден' }); return; }
+
+  const apiKey = decrypt(record.encryptedKey);
+
+  try {
+    if (provider === 'openai') {
+      // Проверяем ключ через список моделей — бесплатно, не генерирует изображение
+      await axios.get('https://api.openai.com/v1/models', {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        timeout: 10000,
+      });
+      // Дополнительно проверяем доступ к DALL-E
+      try {
+        await axios.post('https://api.openai.com/v1/images/generations', {
+          model: 'dall-e-2', prompt: 'red circle', n: 1, size: '256x256',
+        }, { headers: { Authorization: `Bearer ${apiKey}` }, timeout: 30000 });
+        res.json({ ok: true, provider });
+      } catch (dallErr: any) {
+        const msg = dallErr.response?.data?.error?.message || dallErr.message;
+        // Ключ верный, но DALL-E недоступен на этом аккаунте
+        res.json({ ok: false, error: `Ключ верный, но DALL-E недоступен: ${msg}` });
+      }
+    } else if (provider === 'fal') {
+      await axios.post(
+        'https://fal.run/fal-ai/flux/schnell',
+        { prompt: 'red circle', image_size: 'square_hd', num_images: 1 },
+        { headers: { Authorization: `Key ${apiKey}`, 'Content-Type': 'application/json' }, timeout: 60000 },
+      );
+      res.json({ ok: true, provider });
+    } else {
+      // pollinations — бесплатно, ключ не нужен
+      res.json({ ok: true, provider });
+    }
+  } catch (e: any) {
+    const status = e.response?.status;
+    const detail: string = e.response?.data?.detail || e.response?.data?.error?.message || e.message || '';
+    if (provider === 'fal' && status === 403 && detail.includes('Exhausted balance')) {
+      res.status(400).json({ ok: false, error: 'Ключ верный, но баланс исчерпан. Пополни баланс на fal.ai/dashboard/billing' });
+    } else if (status === 401 || (status === 403 && !detail.includes('Exhausted'))) {
+      res.status(400).json({ ok: false, error: `Неверный API ключ для ${provider}` });
+    } else {
+      res.status(400).json({ ok: false, error: detail || e.message });
+    }
+  }
 });
 
 // GET /keys/image — список подключённых Image провайдеров

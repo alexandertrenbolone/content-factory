@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const client_1 = require("@prisma/client");
+const axios_1 = require("axios");
 const auth_1 = require("../lib/auth");
 const crypto_1 = require("../lib/crypto");
 const llm_1 = require("../adapters/llm");
@@ -120,6 +121,55 @@ router.post('/image', auth_1.requireAuth, async (req, res) => {
         create: { companyId: req.companyId, provider, encryptedKey },
     });
     res.json({ ok: true, provider });
+});
+// POST /keys/image/test — реально проверить Image ключ
+router.post('/image/test', auth_1.requireAuth, async (req, res) => {
+    const { provider } = req.body;
+    const err = (0, validate_1.validateEnum)(provider, 'provider', IMAGE_PROVIDERS);
+    if (err) { res.status(400).json({ error: err }); return; }
+    const record = await prisma.imageKey.findUnique({
+        where: { companyId_provider: { companyId: req.companyId, provider } },
+    });
+    if (!record) { res.status(404).json({ error: 'Ключ не найден' }); return; }
+    const apiKey = (0, crypto_1.decrypt)(record.encryptedKey);
+    try {
+        if (provider === 'openai') {
+            await axios_1.default.get('https://api.openai.com/v1/models', {
+                headers: { Authorization: `Bearer ${apiKey}` },
+                timeout: 10000,
+            });
+            try {
+                await axios_1.default.post('https://api.openai.com/v1/images/generations', {
+                    model: 'dall-e-2', prompt: 'red circle', n: 1, size: '256x256',
+                }, { headers: { Authorization: `Bearer ${apiKey}` }, timeout: 30000 });
+                res.json({ ok: true, provider });
+            }
+            catch (dallErr) {
+                const msg = dallErr.response?.data?.error?.message || dallErr.message;
+                res.json({ ok: false, error: `Ключ верный, но DALL-E недоступен: ${msg}` });
+            }
+        }
+        else if (provider === 'fal') {
+            await axios_1.default.post('https://fal.run/fal-ai/flux/schnell', { prompt: 'red circle', image_size: 'square_hd', num_images: 1 }, { headers: { Authorization: `Key ${apiKey}`, 'Content-Type': 'application/json' }, timeout: 60000 });
+            res.json({ ok: true, provider });
+        }
+        else {
+            res.json({ ok: true, provider });
+        }
+    }
+    catch (e) {
+        const status = e.response?.status;
+        const detail = e.response?.data?.detail || e.response?.data?.error?.message || e.message || '';
+        if (provider === 'fal' && status === 403 && detail.includes('Exhausted balance')) {
+            res.status(400).json({ ok: false, error: 'Ключ верный, но баланс исчерпан. Пополни баланс на fal.ai/dashboard/billing' });
+        }
+        else if (status === 401 || (status === 403 && !detail.includes('Exhausted'))) {
+            res.status(400).json({ ok: false, error: `Неверный API ключ для ${provider}` });
+        }
+        else {
+            res.status(400).json({ ok: false, error: detail || e.message });
+        }
+    }
 });
 // GET /keys/image — список подключённых Image провайдеров
 router.get('/image', auth_1.requireAuth, async (req, res) => {
