@@ -25,10 +25,9 @@ router.get('/google/auth', requireAuth, (req: AuthRequest, res: Response) => {
 });
 
 router.get('/google/callback', async (req: Request, res: Response) => {
-  const FRONTEND = (process.env.FRONTEND_URL || 'http://localhost:5173').split(',')[0];
   const { code, state: companyId, error } = req.query as { code: string; state: string; error?: string };
   if (error || !code || !companyId) {
-    res.redirect(`${FRONTEND}/storage?error=cancelled`);
+    res.redirect('/storage?error=cancelled');
     return;
   }
   try {
@@ -48,7 +47,7 @@ router.get('/google/callback', async (req: Request, res: Response) => {
         expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
       },
     });
-    res.redirect(`${FRONTEND}/storage?connected=google`);
+    res.redirect('/storage?connected=google');
   } catch (e: any) {
     console.error('[storage/google/callback]', e.message);
     res.status(500).send('Ошибка при подключении Google Drive. Попробуй ещё раз.');
@@ -63,10 +62,9 @@ router.get('/yandex/auth', requireAuth, (req: AuthRequest, res: Response) => {
 });
 
 router.get('/yandex/callback', async (req: Request, res: Response) => {
-  const FRONTEND = (process.env.FRONTEND_URL || 'http://localhost:5173').split(',')[0];
   const { code, state: companyId, error } = req.query as { code: string; state: string; error?: string };
   if (error || !code || !companyId) {
-    res.redirect(`${FRONTEND}/storage?error=cancelled`);
+    res.redirect('/storage?error=cancelled');
     return;
   }
   try {
@@ -87,7 +85,7 @@ router.get('/yandex/callback', async (req: Request, res: Response) => {
         expiresAt,
       },
     });
-    res.redirect(`${FRONTEND}/storage?connected=yandex`);
+    res.redirect('/storage?connected=yandex');
   } catch (e: any) {
     console.error('[storage/yandex/callback]', e.message);
     res.status(500).send('Ошибка при подключении Яндекс Диска. Попробуй ещё раз.');
