@@ -46,8 +46,8 @@ app.use('/api/posts', postsRouter);
 if (process.env.NODE_ENV === 'production') {
   const frontendDist = path.join(__dirname, '../../frontend/dist');
   app.use(express.static(frontendDist));
-  // Все неизвестные GET → index.html (React Router обработает роутинг)
-  app.get('*', (_req, res) => {
+  // Все неизвестные запросы → index.html (React Router обработает роутинг)
+  app.use((_req, res) => {
     res.sendFile(path.join(frontendDist, 'index.html'));
   });
 }
