@@ -173,6 +173,11 @@ export default function Keys() {
     await load();
   }
 
+  async function testImg(provider: string) {
+    await api.post('/keys/image/test', { provider });
+    return 'Ключ работает';
+  }
+
   return (
     <div className="p-8 max-w-4xl">
       <div className="mb-8">
@@ -225,7 +230,7 @@ export default function Keys() {
                 connected={imgKeys.some((k) => k.provider === id)}
                 onSave={saveImg}
                 onDelete={async () => {}}
-                onTest={async () => 'ok'}
+                onTest={testImg}
               />
             ))}
           </div>
