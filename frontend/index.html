@@ -4,23 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Content Factory</title>
-    <!-- GitHub Pages SPA: восстанавливаем маршрут после редиректа из 404.html -->
-    <script>
-      (function() {
-        var redirect = sessionStorage.redirect;
-        delete sessionStorage.redirect;
-        if (redirect && redirect !== location.href) {
-          history.replaceState(null, null, redirect);
-        }
-        var p = window.location.search.slice(1);
-        if (p) {
-          var path = p.replace(/~and~/g, '&');
-          var query = window.location.search.slice(1).match(/[?&]q=([^&]+)/);
-          if (query) path += '?' + query[1].replace(/~and~/g, '&');
-          if (path) history.replaceState(null, null, '/' + path + window.location.hash);
-        }
-      })();
-    </script>
+    <!-- NOTE: GitHub Pages SPA script removed — Express/Render serves proper SPA fallback -->
+    <!-- The old script was mangling query strings: /storage?connected=yandex → /connected=yandex -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Golos+Text:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
