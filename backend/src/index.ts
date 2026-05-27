@@ -11,6 +11,7 @@ if (missing.length > 0) {
 
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import authRouter from './routes/auth';
 import keysRouter from './routes/keys';
 import storageRouter from './routes/storage';
@@ -28,17 +29,28 @@ app.use(cors({ origin: allowedOrigins, credentials: true }));
 
 app.use(express.json());
 
-app.get('/health', (_req, res) => {
+// Все API-роуты под /api/ — не конфликтуют с SPA-страницами при F5
+app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-app.use('/auth', authRouter);
-app.use('/keys', keysRouter);
-app.use('/storage', storageRouter);
-app.use('/social', socialRouter);
-app.use('/sources', sourcesRouter);
-app.use('/topics', topicsRouter);
-app.use('/posts', postsRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/keys', keysRouter);
+app.use('/api/storage', storageRouter);
+app.use('/api/social', socialRouter);
+app.use('/api/sources', sourcesRouter);
+app.use('/api/topics', topicsRouter);
+app.use('/api/posts', postsRouter);
+
+// Production: Express раздаёт собранный React frontend + SPA fallback
+if (process.env.NODE_ENV === 'production') {
+  const frontendDist = path.join(__dirname, '../../frontend/dist');
+  app.use(express.static(frontendDist));
+  // Все неизвестные GET → index.html (React Router обработает роутинг)
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

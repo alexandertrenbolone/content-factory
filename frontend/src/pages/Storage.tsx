@@ -26,7 +26,13 @@ export default function Storage() {
 
   useEffect(() => {
     api.get<StorageConnection[]>('/storage/status')
-      .then(setConnections)
+      .then((data) => {
+        // Фикс: API может вернуть {} при ошибке — connections.find() крашился на объекте
+        setConnections(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        setConnections([]);
+      })
       .finally(() => setLoading(false));
   }, []);
 

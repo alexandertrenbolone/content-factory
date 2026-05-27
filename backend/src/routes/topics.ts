@@ -18,7 +18,8 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
 });
 
 router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
-  const { name, llmProvider, imageProvider, systemPrompt, socialAccountId, postFormat, scheduleMinutes } = req.body;
+  // autoPublish добавлен — без него дефолт в БД всегда true (баг: ручной режим игнорировался)
+  const { name, llmProvider, imageProvider, systemPrompt, socialAccountId, postFormat, scheduleMinutes, autoPublish } = req.body;
 
   const err = firstError(
     validateString(name, 'name', { min: 1, max: 100 }),
@@ -45,6 +46,8 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
       imageProvider: imageProvider || null,
       postFormat: postFormat || 'text',
       scheduleMinutes: parseInt(scheduleMinutes) || 60,
+      // Фикс: передаём autoPublish из запроса, иначе дефолт true
+      autoPublish: typeof autoPublish === 'boolean' ? autoPublish : true,
     },
   });
   res.status(201).json(topic);

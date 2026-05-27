@@ -41,18 +41,26 @@ export default function Dashboard() {
       api.get<any[]>('/sources'),
       api.get<any[]>('/topics'),
       api.get<{ posts: Post[] }>('/posts'),
-    ]).then(([sources, topics, postsData]) => {
-      const recentPosts = postsData.posts.slice(0, 8);
-      const published = postsData.posts.filter((p) => p.status === 'published').length;
-      const pending = postsData.posts.filter((p) => p.status === 'pending').length;
-      const failed = postsData.posts.filter((p) => p.status === 'failed').length;
-      setStats({
-        sources: sources.length,
-        topics: topics.length,
-        posts: { total: postsData.posts.length, published, pending, failed },
-      });
-      setPosts(recentPosts);
-    }).finally(() => setLoading(false));
+    ])
+      .then(([sources, topics, postsData]) => {
+        // Фикс: безопасный доступ к массиву постов — защита от {} при ошибке API
+        const postsList = Array.isArray(postsData?.posts) ? postsData.posts : [];
+        const recentPosts = postsList.slice(0, 8);
+        const published = postsList.filter((p) => p.status === 'published').length;
+        const pending = postsList.filter((p) => p.status === 'pending').length;
+        const failed = postsList.filter((p) => p.status === 'failed').length;
+        setStats({
+          sources: sources.length,
+          topics: topics.length,
+          posts: { total: postsList.length, published, pending, failed },
+        });
+        setPosts(recentPosts);
+      })
+      .catch((err) => {
+        // Фикс: без .catch() краш при ошибке API приводил к чёрному экрану
+        console.error('[Dashboard] Failed to load data:', err);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const statCards = stats

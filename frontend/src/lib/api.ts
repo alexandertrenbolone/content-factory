@@ -1,8 +1,8 @@
 const TOKEN_KEY = 'cf_token';
 
 // В production VITE_API_URL указывает на задеплоенный backend (например Railway).
-// В dev-режиме пустая строка → Vite proxy перехватывает /auth, /posts и т.д.
-const BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? '';
+// В dev-режиме пустая строка → Vite proxy перехватывает /api/auth, /api/posts и т.д.
+const BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
