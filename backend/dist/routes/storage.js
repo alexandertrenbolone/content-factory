@@ -55,10 +55,9 @@ router.get('/google/auth', auth_1.requireAuth, (req, res) => {
     res.json({ url });
 });
 router.get('/google/callback', async (req, res) => {
-    const FRONTEND = process.env.FRONTEND_URL || 'http://localhost:5173';
     const { code, state: companyId, error } = req.query;
     if (error || !code || !companyId) {
-        res.redirect(`${FRONTEND}/storage?error=cancelled`);
+        res.redirect('/storage?error=cancelled');
         return;
     }
     try {
@@ -78,7 +77,7 @@ router.get('/google/callback', async (req, res) => {
                 expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
             },
         });
-        res.redirect(`${FRONTEND}/storage?connected=google`);
+        res.redirect('/storage?connected=google');
     }
     catch (e) {
         console.error('[storage/google/callback]', e.message);
@@ -91,10 +90,9 @@ router.get('/yandex/auth', auth_1.requireAuth, (req, res) => {
     res.json({ url });
 });
 router.get('/yandex/callback', async (req, res) => {
-    const FRONTEND = process.env.FRONTEND_URL || 'http://localhost:5173';
     const { code, state: companyId, error } = req.query;
     if (error || !code || !companyId) {
-        res.redirect(`${FRONTEND}/storage?error=cancelled`);
+        res.redirect('/storage?error=cancelled');
         return;
     }
     try {
@@ -115,7 +113,7 @@ router.get('/yandex/callback', async (req, res) => {
                 expiresAt,
             },
         });
-        res.redirect(`${FRONTEND}/storage?connected=yandex`);
+        res.redirect('/storage?connected=yandex');
     }
     catch (e) {
         console.error('[storage/yandex/callback]', e.message);
