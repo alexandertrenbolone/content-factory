@@ -53,10 +53,23 @@ export async function generatePost(data: GenerateJobData): Promise<void> {
         const imageKey = await prisma.imageKey.findUnique({
           where: { companyId_provider: { companyId, provider: topic.imageProvider } },
         });
-        if (!imageKey) {
-          console.warn(`[generatePost] No image key for ${topic.imageProvider}, skipping image`);
-        } else {
+        if (imageKey) {
           imgApiKey = decrypt(imageKey.encryptedKey);
+        } else {
+          // Для Gemini можно использовать LLM ключ (один ключ для текста и картинок)
+          const LLM_SHARED_PROVIDERS = ['gemini'];
+          if (LLM_SHARED_PROVIDERS.includes(topic.imageProvider)) {
+            const llmKey = await prisma.llmKey.findUnique({
+              where: { companyId_provider: { companyId, provider: topic.imageProvider } },
+            });
+            if (llmKey) {
+              imgApiKey = decrypt(llmKey.encryptedKey);
+              console.log(`[generatePost] Using LLM key for ${topic.imageProvider} image generation`);
+            }
+          }
+          if (!imgApiKey) {
+            console.warn(`[generatePost] No image key for ${topic.imageProvider}, skipping image`);
+          }
         }
       }
 

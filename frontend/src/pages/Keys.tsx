@@ -17,6 +17,7 @@ const llmProviders = [
 ];
 
 const imgProviders = [
+  { id: 'gemini', name: 'Google Gemini (тот же ключ что для LLM)', hint: 'AIza...' },
   { id: 'openai', name: 'OpenAI DALL-E', hint: 'sk-...' },
   { id: 'fal', name: 'FAL.ai', hint: 'fal-...' },
 ];

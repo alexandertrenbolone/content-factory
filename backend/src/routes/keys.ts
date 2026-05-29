@@ -11,7 +11,7 @@ const router = Router();
 const prisma = new PrismaClient();
 
 const LLM_PROVIDERS = ['openai', 'anthropic', 'gemini', 'deepseek', 'openrouter', 'groq'];
-const IMAGE_PROVIDERS = ['openai', 'fal', 'pollinations'];
+const IMAGE_PROVIDERS = ['openai', 'fal', 'pollinations', 'gemini'];
 
 // POST /keys/llm — сохранить LLM ключ
 router.post('/llm', requireAuth, async (req: AuthRequest, res: Response) => {
@@ -166,6 +166,22 @@ router.post('/image/test', requireAuth, async (req: AuthRequest, res: Response) 
         { headers: { Authorization: `Key ${apiKey}`, 'Content-Type': 'application/json' }, timeout: 60000 },
       );
       res.json({ ok: true, provider });
+    } else if (provider === 'gemini') {
+      const testRes = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+        {
+          contents: [{ parts: [{ text: 'red circle' }] }],
+          generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
+        },
+        { timeout: 60000 },
+      );
+      const parts: any[] = testRes.data.candidates?.[0]?.content?.parts ?? [];
+      const hasImage = parts.some((p: any) => p.inlineData?.mimeType?.startsWith('image/'));
+      if (hasImage) {
+        res.json({ ok: true, provider });
+      } else {
+        res.status(400).json({ ok: false, error: 'Ключ верный, но генерация изображений не вернула картинку' });
+      }
     } else {
       // pollinations — бесплатно, ключ не нужен
       res.json({ ok: true, provider });
