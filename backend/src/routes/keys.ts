@@ -179,6 +179,20 @@ router.post('/image/test', requireAuth, async (req: AuthRequest, res: Response) 
   }
 });
 
+// DELETE /keys/image/:provider — удалить ключ
+router.delete('/image/:provider', requireAuth, async (req: AuthRequest, res: Response) => {
+  const provider = req.params.provider as string;
+  if (!IMAGE_PROVIDERS.includes(provider)) {
+    res.status(400).json({ error: `Неизвестный провайдер: ${provider}` });
+    return;
+  }
+  await prisma.imageKey.updateMany({
+    where: { companyId: req.companyId!, provider },
+    data: { isActive: false },
+  });
+  res.json({ ok: true });
+});
+
 // GET /keys/image — список подключённых Image провайдеров
 router.get('/image', requireAuth, async (req: AuthRequest, res: Response) => {
   const keys = await prisma.imageKey.findMany({

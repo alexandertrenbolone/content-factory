@@ -173,6 +173,11 @@ export default function Keys() {
     await load();
   }
 
+  async function deleteImg(provider: string) {
+    await api.del(`/keys/image/${provider}`);
+    await load();
+  }
+
   async function testImg(provider: string) {
     await api.post('/keys/image/test', { provider });
     return 'Ключ работает';
@@ -229,7 +234,7 @@ export default function Keys() {
                 hint={hint}
                 connected={imgKeys.some((k) => k.provider === id)}
                 onSave={saveImg}
-                onDelete={async () => {}}
+                onDelete={deleteImg}
                 onTest={testImg}
               />
             ))}
