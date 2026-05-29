@@ -62,14 +62,21 @@ export async function generatePost(data: GenerateJobData): Promise<void> {
 
       if (FREE_IMAGE_PROVIDERS.includes(topic.imageProvider) || imgApiKey) {
         const imgAdapter = createImageAdapter(topic.imageProvider, imgApiKey);
-        const rawUrl = await imgAdapter.generate(`Illustration for: ${sourceTitle}`);
-        // Скачиваем байты сразу — URL OpenAI/FAL временные (~1 час).
-        // Храним как data URL чтобы публикация не зависела от внешних ссылок.
-        const imgRes = await axios.get(rawUrl, { responseType: 'arraybuffer', timeout: 60000 });
-        // Определяем реальный MIME тип из заголовков (Pollinations/OpenAI/FAL возвращают PNG)
-        const contentType = (imgRes.headers['content-type'] as string | undefined)?.split(';')[0].trim() || 'image/jpeg';
-        imageUrl = `data:${contentType};base64,${Buffer.from(imgRes.data).toString('base64')}`;
-        console.log(`[generatePost] Image cached (${topic.imageProvider}, ${contentType}, ${Math.round(imgRes.data.byteLength / 1024)} KB)`);
+        const rawResult = await imgAdapter.generate(`Illustration for: ${sourceTitle}`);
+
+        if (rawResult.startsWith('data:')) {
+          // Адаптер уже вернул data URL (например OpenAI Responses API)
+          imageUrl = rawResult;
+          const contentType = rawResult.split(';')[0].split(':')[1] || 'image/png';
+          const sizeKB = Math.round((rawResult.split(',')[1]?.length ?? 0) * 0.75 / 1024);
+          console.log(`[generatePost] Image cached (${topic.imageProvider}, ${contentType}, ~${sizeKB} KB)`);
+        } else {
+          // Скачиваем байты — URL OpenAI/FAL временные (~1 час).
+          const imgRes = await axios.get(rawResult, { responseType: 'arraybuffer', timeout: 60000 });
+          const contentType = (imgRes.headers['content-type'] as string | undefined)?.split(';')[0].trim() || 'image/jpeg';
+          imageUrl = `data:${contentType};base64,${Buffer.from(imgRes.data).toString('base64')}`;
+          console.log(`[generatePost] Image cached (${topic.imageProvider}, ${contentType}, ${Math.round(imgRes.data.byteLength / 1024)} KB)`);
+        }
       }
     } catch (imgErr: any) {
       console.warn(`[generatePost] Image generation failed (non-fatal): ${imgErr.message}`);

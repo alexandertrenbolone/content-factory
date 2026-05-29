@@ -139,21 +139,25 @@ router.post('/image/test', requireAuth, async (req: AuthRequest, res: Response) 
 
   try {
     if (provider === 'openai') {
-      // Проверяем ключ через список моделей — бесплатно, не генерирует изображение
-      await axios.get('https://api.openai.com/v1/models', {
-        headers: { Authorization: `Bearer ${apiKey}` },
-        timeout: 10000,
-      });
-      // Дополнительно проверяем доступ к DALL-E
+      // Проверяем ключ через Responses API с инструментом image_generation (новый способ OpenAI)
       try {
-        await axios.post('https://api.openai.com/v1/images/generations', {
-          model: 'dall-e-3', prompt: 'red circle', n: 1, size: '1024x1024',
-        }, { headers: { Authorization: `Bearer ${apiKey}` }, timeout: 30000 });
-        res.json({ ok: true, provider });
-      } catch (dallErr: any) {
-        const msg = dallErr.response?.data?.error?.message || dallErr.message;
-        // Ключ верный, но DALL-E недоступен — возвращаем 400 чтобы фронт показал ошибку
-        res.status(400).json({ ok: false, error: `Ключ верный, но DALL-E недоступен: ${msg}` });
+        const testRes = await axios.post('https://api.openai.com/v1/responses', {
+          model: 'gpt-4.1-mini',
+          input: 'red circle',
+          tools: [{ type: 'image_generation' }],
+        }, { headers: { Authorization: `Bearer ${apiKey}` }, timeout: 90000 });
+
+        const hasImage = (testRes.data.output as any[])?.some(
+          (o: any) => o.type === 'image_generation_call',
+        );
+        if (hasImage) {
+          res.json({ ok: true, provider });
+        } else {
+          res.status(400).json({ ok: false, error: 'Ключ верный, но генерация изображений недоступна для этого аккаунта' });
+        }
+      } catch (imgErr: any) {
+        const msg = imgErr.response?.data?.error?.message || imgErr.message;
+        res.status(400).json({ ok: false, error: `Ключ верный, но генерация изображений недоступна: ${msg}` });
       }
     } else if (provider === 'fal') {
       await axios.post(
