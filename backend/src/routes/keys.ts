@@ -147,7 +147,7 @@ router.post('/image/test', requireAuth, async (req: AuthRequest, res: Response) 
       // Дополнительно проверяем доступ к DALL-E
       try {
         await axios.post('https://api.openai.com/v1/images/generations', {
-          model: 'dall-e-2', prompt: 'red circle', n: 1, size: '256x256',
+          model: 'dall-e-3', prompt: 'red circle', n: 1, size: '1024x1024',
         }, { headers: { Authorization: `Bearer ${apiKey}` }, timeout: 30000 });
         res.json({ ok: true, provider });
       } catch (dallErr: any) {
