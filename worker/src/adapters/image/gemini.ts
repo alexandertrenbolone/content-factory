@@ -6,12 +6,17 @@ export class GeminiImageAdapter implements ImageAdapter {
 
   async generate(prompt: string): Promise<string> {
     const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${this.apiKey}`,
+      'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-image:generateContent',
       {
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
       },
-      { timeout: 120000 },
+      {
+        headers: {
+          'x-goog-api-key': this.apiKey,
+          'Content-Type': 'application/json',
+        },
+        timeout: 120000,
+      },
     );
 
     const parts: any[] = response.data.candidates?.[0]?.content?.parts ?? [];

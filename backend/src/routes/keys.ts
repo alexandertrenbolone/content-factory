@@ -168,12 +168,11 @@ router.post('/image/test', requireAuth, async (req: AuthRequest, res: Response) 
       res.json({ ok: true, provider });
     } else if (provider === 'gemini') {
       const testRes = await axios.post(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+        'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-image:generateContent',
         {
           contents: [{ parts: [{ text: 'red circle' }] }],
-          generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
         },
-        { timeout: 60000 },
+        { headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' }, timeout: 60000 },
       );
       const parts: any[] = testRes.data.candidates?.[0]?.content?.parts ?? [];
       const hasImage = parts.some((p: any) => p.inlineData?.mimeType?.startsWith('image/'));
