@@ -10,7 +10,6 @@ interface ConnectedKey { provider: string; createdAt: string }
 const llmProviders = [
   { id: 'openrouter', name: 'OpenRouter', hint: 'sk-or-v1-...' },
   { id: 'groq', name: 'Groq (бесплатно)', hint: 'gsk_...' },
-  { id: 'together', name: 'Together AI (текст + картинки)', hint: 'together-...' },
   { id: 'openai', name: 'OpenAI', hint: 'sk-...' },
   { id: 'anthropic', name: 'Anthropic', hint: 'sk-ant-...' },
   { id: 'gemini', name: 'Google Gemini', hint: 'AIza...' },
@@ -19,7 +18,6 @@ const llmProviders = [
 
 const imgProviders = [
   { id: 'replicate', name: 'Replicate — FLUX Schnell', hint: 'r8_...' },
-  { id: 'together', name: 'Together AI — FLUX (тот же ключ что для LLM)', hint: 'together-...' },
   { id: 'openai', name: 'OpenAI DALL-E', hint: 'sk-...' },
   { id: 'fal', name: 'FAL.ai', hint: 'fal-...' },
 ];
