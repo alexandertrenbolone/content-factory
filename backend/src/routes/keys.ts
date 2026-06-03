@@ -11,7 +11,7 @@ const router = Router();
 const prisma = new PrismaClient();
 
 const LLM_PROVIDERS = ['openai', 'anthropic', 'gemini', 'deepseek', 'openrouter', 'groq', 'together'];
-const IMAGE_PROVIDERS = ['openai', 'fal', 'pollinations', 'together'];
+const IMAGE_PROVIDERS = ['openai', 'fal', 'pollinations', 'together', 'replicate'];
 
 // POST /keys/llm — сохранить LLM ключ
 router.post('/llm', requireAuth, async (req: AuthRequest, res: Response) => {
@@ -177,6 +177,18 @@ router.post('/image/test', requireAuth, async (req: AuthRequest, res: Response) 
         res.json({ ok: true, provider });
       } else {
         res.status(400).json({ ok: false, error: 'Ключ верный, но изображение не сгенерировалось' });
+      }
+    } else if (provider === 'replicate') {
+      const testRes = await axios.post(
+        'https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions',
+        { input: { prompt: 'red circle', num_outputs: 1 } },
+        { headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json', Prefer: 'wait=30' }, timeout: 60000 },
+      );
+      const hasOutput = testRes.data.output?.[0] || testRes.data.id;
+      if (hasOutput) {
+        res.json({ ok: true, provider });
+      } else {
+        res.status(400).json({ ok: false, error: 'Ключ верный, но предсказание не создалось' });
       }
     } else {
       // pollinations — бесплатно, ключ не нужен

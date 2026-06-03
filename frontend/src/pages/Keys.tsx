@@ -18,6 +18,7 @@ const llmProviders = [
 ];
 
 const imgProviders = [
+  { id: 'replicate', name: 'Replicate — FLUX Schnell', hint: 'r8_...' },
   { id: 'together', name: 'Together AI — FLUX (тот же ключ что для LLM)', hint: 'together-...' },
   { id: 'openai', name: 'OpenAI DALL-E', hint: 'sk-...' },
   { id: 'fal', name: 'FAL.ai', hint: 'fal-...' },
