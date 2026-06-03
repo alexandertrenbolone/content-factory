@@ -57,7 +57,7 @@ export async function generatePost(data: GenerateJobData): Promise<void> {
           imgApiKey = decrypt(imageKey.encryptedKey);
         } else {
           // Для Gemini можно использовать LLM ключ (один ключ для текста и картинок)
-          const LLM_SHARED_PROVIDERS = ['gemini'];
+          const LLM_SHARED_PROVIDERS = ['together'];
           if (LLM_SHARED_PROVIDERS.includes(topic.imageProvider)) {
             const llmKey = await prisma.llmKey.findUnique({
               where: { companyId_provider: { companyId, provider: topic.imageProvider } },

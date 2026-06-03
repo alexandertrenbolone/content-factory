@@ -10,8 +10,8 @@ import { validateEnum, firstError } from '../lib/validate';
 const router = Router();
 const prisma = new PrismaClient();
 
-const LLM_PROVIDERS = ['openai', 'anthropic', 'gemini', 'deepseek', 'openrouter', 'groq'];
-const IMAGE_PROVIDERS = ['openai', 'fal', 'pollinations', 'gemini'];
+const LLM_PROVIDERS = ['openai', 'anthropic', 'gemini', 'deepseek', 'openrouter', 'groq', 'together'];
+const IMAGE_PROVIDERS = ['openai', 'fal', 'pollinations', 'together'];
 
 // POST /keys/llm — сохранить LLM ключ
 router.post('/llm', requireAuth, async (req: AuthRequest, res: Response) => {
@@ -166,20 +166,17 @@ router.post('/image/test', requireAuth, async (req: AuthRequest, res: Response) 
         { headers: { Authorization: `Key ${apiKey}`, 'Content-Type': 'application/json' }, timeout: 60000 },
       );
       res.json({ ok: true, provider });
-    } else if (provider === 'gemini') {
+    } else if (provider === 'together') {
       const testRes = await axios.post(
-        'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-image:generateContent',
-        {
-          contents: [{ parts: [{ text: 'red circle' }] }],
-        },
-        { headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' }, timeout: 60000 },
+        'https://api.together.ai/v1/images/generations',
+        { model: 'black-forest-labs/FLUX.1-schnell', prompt: 'red circle', n: 1, width: 512, height: 512 },
+        { headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' }, timeout: 90000 },
       );
-      const parts: any[] = testRes.data.candidates?.[0]?.content?.parts ?? [];
-      const hasImage = parts.some((p: any) => p.inlineData?.mimeType?.startsWith('image/'));
+      const hasImage = testRes.data.data?.[0]?.url || testRes.data.data?.[0]?.b64_json;
       if (hasImage) {
         res.json({ ok: true, provider });
       } else {
-        res.status(400).json({ ok: false, error: 'Ключ верный, но генерация изображений не вернула картинку' });
+        res.status(400).json({ ok: false, error: 'Ключ верный, но изображение не сгенерировалось' });
       }
     } else {
       // pollinations — бесплатно, ключ не нужен

@@ -5,6 +5,7 @@ import { GeminiAdapter } from './gemini';
 import { DeepSeekAdapter } from './deepseek';
 import { OpenRouterAdapter } from './openrouter';
 import { GroqAdapter } from './groq';
+import { TogetherAdapter } from './together';
 
 export function createLlmAdapter(provider: string, apiKey: string): LlmAdapter {
   switch (provider) {
@@ -14,6 +15,7 @@ export function createLlmAdapter(provider: string, apiKey: string): LlmAdapter {
     case 'deepseek':    return new DeepSeekAdapter(apiKey);
     case 'openrouter':  return new OpenRouterAdapter(apiKey);
     case 'groq':        return new GroqAdapter(apiKey);
+    case 'together':    return new TogetherAdapter(apiKey);
     default: throw new Error(`Unknown LLM provider: ${provider}`);
   }
 }
